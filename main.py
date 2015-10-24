@@ -5,6 +5,9 @@ import numpy  # sudo apt-get install python-numpy
 import random
 import pdb
 import timeit
+import mapLoad
+import sys
+
 from unicodedata import *
 
 # Matrix
@@ -269,7 +272,7 @@ class Maze():
     # Define initials parameters
     def __init__(self, population, iterations):
         self.finish = False
-        self.matrix = numpy.zeros(shape=(8, 8))
+        self.matrix = numpy.zeros(shape=(9, 9))
         self.population = []
         self.population_number = population
         self.iteration = 0
@@ -296,24 +299,9 @@ class Maze():
 
     # Load the map with the access and exit point
     def load_map(self):
-        # Hardcodear matris al principio, despues vemos si hacemos otra cosa
-        for i in range(0, 8):
-            self.matrix[i][0] = 9
-        for j in range(0, 8):
-            self.matrix[7][j] = 9
-        for j in range(0, 8):
-            self.matrix[0][j] = 9
-        for i in range(0, 8):
-            self.matrix[i][7] = 9
-        self.matrix[6][3] = 7
-        self.matrix[1][6] = 8
-        self.matrix[2][2] = 1
-        self.matrix[3][2] = 3
-        self.matrix[4][3] = 6
-        self.matrix[2][4] = 5
-        self.matrix[2][5] = 4
-        self.matrix[5][5] = 3
-        self.matrix[2][6] = 2
+
+        if sys.argv[1]=="hardcode":
+            self.matrix=mapLoad.hardCodeTestCase()
         print self.matrix
         self.set_stating_point()
 
