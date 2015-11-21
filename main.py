@@ -7,6 +7,8 @@ import pdb
 import timeit
 import mapLoad
 import sys
+import matplotlib.pyplot as pyplot
+
 
 from unicodedata import *
 
@@ -20,7 +22,10 @@ from unicodedata import *
 FINISH_POINT = 7
 STARTING_POINT = 8
 MUTATION_NUMBER = 15
-
+if sys.argv[1]=="hardcode":
+    RANDOM_MODE=False
+if sys.argv[1]=="random":
+    RANDOM_MODE=True
 
 class Chromosome():
 
@@ -54,10 +59,12 @@ class Solution:
     X_DELTA_LIST = [1, 0, -1, 0]
     Y_DELTA_LIST = [0, 1, 0, -1]
     # Penalidad por pasar por un obstaculo, da mayor prefencia a soluciones sin obtáculos
-    OBSTACLE_PENALTY = 1000
+    OBSTACLE_PENALTY = 10000
 
     def __init__(self, maze=None):
         self.chromosomes = []
+        self.possible_solution=True
+
         self.fitness = 99999
         if maze:
             self.position_x = maze.initial_position_x
@@ -72,26 +79,51 @@ class Solution:
 
     # Make a solution for the maze and get fitness and sets the fitness
     def run(self):
-        position = 0
-        fitness = 0
-        while position != FINISH_POINT:
-            step = random.randint(0, 3)  # 0: DOWN, 1: RIGHT, 2: UP, 3: LEFT
-            dx = self.X_DELTA_LIST[step]
-            dy = self.Y_DELTA_LIST[step]
-            try:
-                if self.position_x + dx > 0 and self.position_y + dy > 0:
-                    position = self.matrix[self.position_x + dx][self.position_y + dy]
-                    fitness += 1
-                    if position != FINISH_POINT:
-                        fitness += position * self.OBSTACLE_PENALTY
-                    # actualizo la posicion actual
-                    self.position_x += dx
-                    self.position_y += dy
-                    # agrego los datos del cromosoma
-                    self.chromosomes.append(Chromosome(self.position_x, self.position_y, step,self.matrix[self.position_x,self.position_y]))
-            except IndexError as error:
-                position = 0
-        self.fitness = fitness
+        if RANDOM_MODE:
+            position = 0
+            fitness = 0
+            while (position != FINISH_POINT):
+                step = random.randint(0, 3)  # 0: DOWN, 1: RIGHT, 2: UP, 3: LEFT
+                dx = self.X_DELTA_LIST[step]
+                dy = self.Y_DELTA_LIST[step]
+                try:
+                    value_position=self.matrix[self.position_x + dx][self.position_y + dy]
+                    if self.position_x + dx > 0 and self.position_y + dy > 0 and  value_position != 9:
+                        position = value_position
+                        fitness += 1
+                        if position != FINISH_POINT:
+                            fitness += 1
+                            
+                        # actualizo la posicion actual
+                        self.position_x += dx
+                        self.position_y += dy
+                        # agrego los datos del cromosoma
+                        self.chromosomes.append(Chromosome(self.position_x, self.position_y, step,self.matrix[self.position_x,self.position_y]))
+                except IndexError as error:
+                    position = 0
+            self.fitness = fitness
+        else:
+            position = 0
+            fitness = 0
+            while (position != FINISH_POINT):
+                step = random.randint(0, 3)  # 0: DOWN, 1: RIGHT, 2: UP, 3: LEFT
+                dx = self.X_DELTA_LIST[step]
+                dy = self.Y_DELTA_LIST[step]
+                try:
+                    if self.position_x + dx > 0 and self.position_y + dy > 0:
+                        position = self.matrix[self.position_x + dx][self.position_y + dy]
+                        fitness += 1
+                        if position != FINISH_POINT:
+                            fitness += position * self.OBSTACLE_PENALTY*200
+                            
+                        # actualizo la posicion actual
+                        self.position_x += dx
+                        self.position_y += dy
+                        # agrego los datos del cromosoma
+                        self.chromosomes.append(Chromosome(self.position_x, self.position_y, step,self.matrix[self.position_x,self.position_y]))
+                except IndexError as error:
+                    position = 0
+            self.fitness = fitness
 
 
 
@@ -111,15 +143,28 @@ class Solution:
         print "Direcciones: " + self.print_directions(", ".join([str(chrom.step) for chrom in self.chromosomes]))
 
     def update_fitness(self, value=None):
-        if value:
-            self.fitness = value
+        if RANDOM_MODE:
+            self.possible_solution=True
+            if value:
+                self.fitness = value
+            else:
+                fitness = 0
+                for chrom in self.chromosomes[:-1]:
+                    if self.matrix[chrom.x][chrom.y] == 9:
+                        fitness=99999999
+                        self.possible_solution=False
+                fitness += len(self.chromosomes)
+                self.fitness = fitness
         else:
-            fitness = 0
-            for chrom in self.chromosomes[:-1]:
-                fitness += self.matrix[chrom.x][chrom.y]
-            fitness *= self.OBSTACLE_PENALTY
-            fitness += len(self.chromosomes)
-            self.fitness = fitness
+            if value:
+                self.fitness = value
+            else:
+                fitness = 0
+                for chrom in self.chromosomes[:-1]:
+                    fitness += self.matrix[chrom.x][chrom.y]
+                fitness *= self.OBSTACLE_PENALTY
+                fitness += len(self.chromosomes)
+                self.fitness = fitness
 
     def eliminate_loops(self):
         index = None
@@ -280,7 +325,7 @@ class Maze():
         self.initial_position_x = None
         self.initial_position_y = None
         # TODO: Lo pongo para hacer pruebas
-        self.best_posible = 9
+        self.best_posible = 180
 
     def set_stating_point(self):
 
@@ -300,10 +345,32 @@ class Maze():
     # Load the map with the access and exit point
     def load_map(self):
 
-        if sys.argv[1]=="hardcode":
+        #if sys.argv[1]=="hardcode":
+        #    self.matrix=mapLoad.hardCodeTestCase()
+        if RANDOM_MODE:
+            self.matrix=mapLoad.randomCase()
+        else:
             self.matrix=mapLoad.hardCodeTestCase()
-        print self.matrix
+
+        
+        self.print_map()
         self.set_stating_point()
+
+    def print_map(self):
+        pyplot.figure(figsize=(10, 5))
+        pyplot.imshow(self.matrix, cmap=pyplot.cm.binary, interpolation='nearest')
+        pyplot.xticks([]), pyplot.yticks([])
+        pyplot.show(block=False)
+
+    def print_map_with_solution(self, solution):
+        matrixAux=self.matrix
+        for chrom in solution.get_chromosomes():
+            matrixAux[chrom.position]=15.4
+        pyplot.figure(figsize=(10, 5))
+        pyplot.imshow(matrixAux, cmap=pyplot.cm.binary, interpolation='nearest')
+        pyplot.xticks([]), pyplot.yticks([])
+        pyplot.show(block=False)
+
 
     # Creates the initial population
     def init_population(self):
@@ -343,7 +410,19 @@ class Maze():
 
     # Return the solution with best fitness score
     def get_winner(self):
-        return self.population[0]
+#        if RANDOM_MODE:
+#            for solution in self.population:
+#                if solution.possible_solution:
+#                    print solution
+#                     return solution 
+ #       else:
+        for solution in self.population:
+            if solution.possible_solution:
+                return solution
+        print "SOLUTION NOT FOUND"
+        for chromosome in self.population[0].chromosomes:
+            print str(self.population[0].matrix[chromosome.x][chromosome.y]) +" "+str(chromosome.x) +","+ str(chromosome.y)
+
 
     def select(self):
         TOP = 20
@@ -353,7 +432,8 @@ class Maze():
 
 def main():
     # TODO: pasar parámetros al constructor
-    maze = Maze(1000, 50)
+
+    maze = Maze(1000, 10000)
     maze.load_map()
     maze.init_population()
     maze.calc_fitness()
@@ -367,9 +447,12 @@ def main():
         maze.iteration += 1
     winner = maze.get_winner()
     clock_stop = timeit.default_timer()
-    #print maze.matrix
+    print maze.matrix
     winner.print_solution()
+    maze.print_map_with_solution(winner)
+
     print "Tiempo tomado por alg. genético: " + str(clock_stop - clock_start) + " segundos"
+    raw_input("Programa concluído. Presione cualquier tecla para salir.")
 
 
 
