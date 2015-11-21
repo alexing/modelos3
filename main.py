@@ -19,9 +19,11 @@ from unicodedata import *
 # 7: Finish Point
 # (1-6): Different obstacles
 # 0: Walkable
+WALL = 9
 FINISH_POINT = 7
 STARTING_POINT = 8
 MUTATION_NUMBER = 15
+
 if sys.argv[1]=="hardcode":
     RANDOM_MODE=False
 if sys.argv[1]=="random":
@@ -88,7 +90,7 @@ class Solution:
                 dy = self.Y_DELTA_LIST[step]
                 try:
                     value_position=self.matrix[self.position_x + dx][self.position_y + dy]
-                    if self.position_x + dx > 0 and self.position_y + dy > 0 and  value_position != 9:
+                    if self.position_x + dx > 0 and self.position_y + dy > 0 and  value_position != WALL:
                         position = value_position
                         fitness += 1
                         if position != FINISH_POINT:
@@ -150,7 +152,7 @@ class Solution:
             else:
                 fitness = 0
                 for chrom in self.chromosomes[:-1]:
-                    if self.matrix[chrom.x][chrom.y] == 9:
+                    if self.matrix[chrom.x][chrom.y] == WALL:
                         fitness=99999999
                         self.possible_solution=False
                 fitness += len(self.chromosomes)
@@ -410,18 +412,13 @@ class Maze():
 
     # Return the solution with best fitness score
     def get_winner(self):
-#        if RANDOM_MODE:
-#            for solution in self.population:
-#                if solution.possible_solution:
-#                    print solution
-#                     return solution 
- #       else:
+
         for solution in self.population:
             if solution.possible_solution:
                 return solution
-        print "SOLUTION NOT FOUND"
-        for chromosome in self.population[0].chromosomes:
-            print str(self.population[0].matrix[chromosome.x][chromosome.y]) +" "+str(chromosome.x) +","+ str(chromosome.y)
+        #print "SOLUTION NOT FOUND"
+        #for chromosome in self.population[0].chromosomes:
+        #    print str(self.population[0].matrix[chromosome.x][chromosome.y]) +" "+str(chromosome.x) +","+ str(chromosome.y)
 
 
     def select(self):
@@ -432,13 +429,14 @@ class Maze():
 
 def main():
     # TODO: pasar parámetros al constructor
-
+    clock_start_initialization = timeit.default_timer()
     maze = Maze(1000, 10000)
     maze.load_map()
     maze.init_population()
     maze.calc_fitness()
     maze.select()
-    clock_start = timeit.default_timer()
+    elapsed_initialization = timeit.default_timer() -clock_start_initialization
+    clock_start_genetic_algorithm = timeit.default_timer()
     while not maze.has_finished():
         maze.mate()
         maze.mutate()
@@ -446,12 +444,13 @@ def main():
         maze.select()
         maze.iteration += 1
     winner = maze.get_winner()
-    clock_stop = timeit.default_timer()
-    print maze.matrix
+    elapsed_genetic_algorithm = timeit.default_timer() -clock_start_genetic_algorithm
+    #print maze.matrix
     winner.print_solution()
     maze.print_map_with_solution(winner)
 
-    print "Tiempo tomado por alg. genético: " + str(clock_stop - clock_start) + " segundos"
+    print "Tiempo tomado por generación de poblacion: " + str(elapsed_initialization) + " segundos"
+    print "Tiempo tomado por alg. genético: " + str(elapsed_genetic_algorithm) + " segundos"
     raw_input("Programa concluído. Presione cualquier tecla para salir.")
 
 

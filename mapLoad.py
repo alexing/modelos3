@@ -8,7 +8,7 @@ import matplotlib.pyplot as pyplot
 
 
 DEFAULT_DIM=9
-RANDOM_DIM=9
+RANDOM_DIM=15
 
 
 def createMap(dim=DEFAULT_DIM): #Default 9 espaciones
